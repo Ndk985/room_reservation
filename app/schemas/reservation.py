@@ -25,6 +25,7 @@ class ReservationUpdate(ReservationBase):
                 'Время начала бронирования '
                 'не может быть больше времени окончания'
             )
+        return values
 
 
 class ReservationCreate(ReservationUpdate):
