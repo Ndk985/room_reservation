@@ -44,7 +44,7 @@ class ReservationCreate(ReservationUpdate):
     meetingroom_id: int = Field(..., gt=0, example=1)
 
 
-class ReservationDB(ReservationCreate):
+class ReservationDB(ReservationBase):
     id: int
     meetingroom_id: int
 
