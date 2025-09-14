@@ -8,6 +8,7 @@ class Settings(BaseSettings):
          ' на определённый период времени '
     )
     database_url: str
+    secret: str = 'SECRET'
 
     class Config:
         env_file = '.env'
