@@ -14,6 +14,7 @@ from app.schemas.reservation import (
     ReservationCreate, ReservationDB, ReservationUpdate
 )
 from app.crud.reservation import reservation_crud
+from app.core.user import current_superuser, current_user
 
 
 router = APIRouter()
@@ -42,7 +43,11 @@ async def create_reservation(
     return new_reservation
 
 
-@router.get('/', response_model=list[ReservationDB])
+@router.get(
+        '/',
+        response_model=list[ReservationDB],
+        dependencies=[Depends(current_superuser)],
+)
 async def get_all_reservations(
         session: AsyncSession = Depends(get_async_session)
 ):
@@ -53,10 +58,13 @@ async def get_all_reservations(
 @router.delete('/{reservation_id}', response_model=ReservationDB)
 async def delete_reservation(
         reservation_id: int,
+        user: User = Depends(current_user),
         session: AsyncSession = Depends(get_async_session),
 ):
+    """Для суперюзеров или создателей объекта бронирования."""
+
     reservation = await check_reservation_before_edit(
-        reservation_id, session
+        reservation_id, session, user
     )
     reservation = await reservation_crud.remove(
         reservation, session
@@ -68,10 +76,13 @@ async def delete_reservation(
 async def update_reservation(
         reservation_id: int,
         obj_in: ReservationUpdate,
+        user: User = Depends(current_user),
         session: AsyncSession = Depends(get_async_session),
 ):
+    """Для суперюзеров или создателей объекта бронирования."""
+
     reservation = await check_reservation_before_edit(
-        reservation_id, session
+        reservation_id, session, user
     )
     await check_reservation_intersections(
         **obj_in.dict(),
@@ -85,3 +96,18 @@ async def update_reservation(
         session=session,
     )
     return reservation
+
+
+@router.get(
+        '/my_reservations',
+        response_model=list[ReservationDB],
+        response_model_exclude={'user_id'},
+)
+async def get_my_reservations(
+    user: User = Depends(current_user),
+    session: AsyncSession = Depends(get_async_session),
+):
+    reservations = await reservation_crud.get_by_user(
+            session=session, user=user
+    )
+    return reservations
